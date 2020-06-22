@@ -30,7 +30,12 @@ function initRequest(){
             });
 
             console.log("check: "+ count+ "\n");
-            reques();
+
+            var numb = ids.length/1000,
+            tempnumb = 0,
+            list = new Array();
+
+            reques(numb, tempnumb, list);
             
         //        fs.writeFileSync('./stor.json', gameList);
         }else{
@@ -41,44 +46,45 @@ function initRequest(){
     }
 }
 
-function reques(){
-            if(state < count){
-                state++;
-                var req = new xml();
-                req.open('GET', `https://store.steampowered.com/api/appdetails?appids=${ids[state]}&cc=de`);
-                req.send();
-                req.onreadystatechange = function(){
-                    if(req.readyState == 4 && req.status == 200){
-                        const content = JSON.parse(req.responseText);
+function reques(numb, tempnumb, list){
+                if(numb > 0){
+                    list = ids.splice(0, 1000);
+                    numb --;
+                                        
+                    list = list.join(",");
 
-                        if(content[ids[state]].data && content[ids[state]].data.price_overview){
-                            if(content[ids[state]].data.price_overview.discount_percent > 0){
-                                console.log(content[ids[state]].data.name+ ": " + content[ids[state]].data.price_overview.discount_percent+ "%");
-                            }
-                        }
-                        if(state == 450){
-                            console.log("<"+ state);
-                        }
-                        if(state/count*100 >= cache + 1){
-                            cache = state/count*100;
-                            console.log(state/count*100+ "%");
-                        }
+                    console.log(ids.length);
 
-                        reques();
-                    }else{
-                        if(req.readyState == 4){
-                            console.log(`err(${req.status}). try to catch`);
+                    var req = new xml();
+                    req.open('GET', `https://store.steampowered.com/api/appdetails?appids=${list}&filters=price_overview`);
+                    req.send();
+                    req.onreadystatechange = async function(){
+                        if(req.readyState == 4 && req.status == 200){
 
-                            if(req.status == 429){
-                                state --;
-                                setTimeout(reques, 300000);
-                            }
-                            if(req.status == 403 || req.status == 0 || req.status == 502){
-                                state --;
-                                setTimeout(reques, 5000);
+                            const content = JSON.parse(req.responseText);
+                            out.push(content);
+
+                            reques(numb, tempnumb, list);                            
+                        }else{
+                            if(req.readyState == 4){
+                                //skip the 500 error bug. have to fix. its PFUSCH we would say in germany
+                                if(req.status == 500){
+                                    reques(numb, tempnumb, list);
+                                }else{
+                                    console.log(`err(${req.status}). try to catch`);
+
+                                    list = list.split(",");
+                                    await list.forEach(e => {
+                                        ids.unshift(e);
+                                    });
+                                    numb++;
+
+                                    setTimeout(reques, 300000, numb, tempnumb, list);
+                                }
                             }
                         }
                     }
-                }
-            }
+                }else{
+                    console.log(out);
+                }    
 }
