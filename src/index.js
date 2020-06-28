@@ -55,7 +55,7 @@ function reques(numb, tempnumb, list){
                                         
                     list = list.join(",");
 
-                    console.log("lap: "+ numb+1);
+                    console.log("lap: "+ (numb+1));
 
                     var req = new xml();
                     req.open('GET', `https://store.steampowered.com/api/appdetails?appids=${list}&filters=price_overview`);
@@ -82,10 +82,10 @@ function reques(numb, tempnumb, list){
                             if(req.readyState == 4){
                                 console.log(`Request Faild \nerr(${req.status}). try to handle`);
 
-                                //skip the 500 error bug. have to fix. its PFUSCH we would say in germany
-                                if(req.status == 500){
-                                    console.log("Skipped");
-//                                    reques(numb, tempnumb, list);
+                                //may fixed
+                                if(req.status == 500 || req.status == 0){
+                                    console.log("retry in 35 seconds");
+                                    setTimeout(reques, 35000,numb, tempnumb, list);
                                 }else{
                                     console.log("try again");
 
