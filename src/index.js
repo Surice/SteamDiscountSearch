@@ -41,7 +41,7 @@ function initRequest(){
 
         }else{
             if(this.readyState == 4){
-                console.log(">"+ this.status);
+                console.log("unexpected init Error: \n"+ this.status);
             }
         }
     }
@@ -55,7 +55,7 @@ function reques(numb, tempnumb, list){
                                         
                     list = list.join(",");
 
-                    console.log(ids.length);
+                    console.log("lap: "+ numb+1);
 
                     var req = new xml();
                     req.open('GET', `https://store.steampowered.com/api/appdetails?appids=${list}&filters=price_overview`);
@@ -70,13 +70,9 @@ function reques(numb, tempnumb, list){
                                     if(item.data.price_overview.discount_percent == 100){
 
                                         checkName(id, function(result){
-                                            console.log("result: "+ result);
-
-                                            const link = `https://store.steampowered.com/app/${id}/${result}/`
-
-                                            var push = result+ " | "+ link.toString();
-                                            stor.push(push);
-                                            fs.writeFileSync(`${__dirname}/stor.json`, stor);
+                                            
+                                            stor.push(result);
+                                            fs.writeFileSync(`${__dirname}/stor.json`, JSON.stringify(stor));
                                         });
                                     }
                                 }
@@ -88,7 +84,7 @@ function reques(numb, tempnumb, list){
 
                                 //skip the 500 error bug. have to fix. its PFUSCH we would say in germany
                                 if(req.status == 500){
-                                    console.log("Skiped");
+                                    console.log("Skipped");
 //                                    reques(numb, tempnumb, list);
                                 }else{
                                     console.log("try again");
@@ -120,10 +116,12 @@ function checkName(id, callback){
     checkreq.onreadystatechange = function(){
         if(this.readyState == 4 && this.status == 200){
             const response = JSON.parse(this.responseText);
-            console.log(response);
+
             if(response[id].data && response[id].data.name){
-                console.log(">"+ response[id].data.name);
-                callback(response[id].data.name);
+                const link = `https://store.steampowered.com/app/${id}`
+
+                var push = response[id].data.name+ " | "+ link.toString();
+                callback(push);
             }else{
                 console.log("data error");
                 setTimeout(checkName, 120000, id, callback);
